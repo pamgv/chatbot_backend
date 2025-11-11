@@ -57,11 +57,18 @@ from routes.user_routes import router as user_router
 import openai
 import os
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Chatbot Game Backend")
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# 👇 Agrega esta sección CORS justo después de crear la app
+origins = [
+    "https://chatbotfrontend2-ito1a3v3o-pamgvs-projects.vercel.app",  # dominio de tu frontend en Vercel
+    "http://localhost:5173",                                          # para desarrollo local
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,3 +84,4 @@ app.include_router(user_router, prefix="/user", tags=["Users"])
 @app.get("/")
 def root():
     return {"message": "🚀 Chatbot backend modular running and connected to MongoDB!"}
+
