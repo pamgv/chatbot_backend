@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: chatbot-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: ./start.sh
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: DB_NAME
+        value: chatbot_game
+      - key: PORT
+        value: 10000
+      - key: ENV
+        value: production
