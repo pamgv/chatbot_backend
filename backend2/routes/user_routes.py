@@ -86,7 +86,8 @@ def register_user(data: Register):
         "password": hashed_pw,
         "best_score": 0,
         "current_game": 1,
-        "stats": {"total_games": 0, "total_correct": 0}
+        "stats": {"total_games": 0, "total_correct": 0},
+        "created_at": datetime.utcnow()
     })
     return {"message": "User registered successfully!"}
 
@@ -130,7 +131,7 @@ async def save_message(data: Message):
             "bot_response": bot_reply,
             "game_number": data.game_number,
             "question_number": data.question_number,
-            "timestamp": datetime.utcnow()
+            "created_at": datetime.utcnow()
         })
 
         return {
@@ -406,6 +407,7 @@ def quiz_history(username: str):
         "total_quizzes": len(quizzes),
         "quizzes": quizzes
     }
+
 
 
 
