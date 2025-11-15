@@ -205,6 +205,11 @@ def save_quiz_result(
     username: str = Body(...),
     game_number: int = Body(...),
     question_number: int = Body(...),
+    quiz_question: str = Body(...),
+    quiz_options: list = Body(...),
+    selected_option: str = Body(...),
+    correct_answer_letter: str = Body(...),
+    correct_answer_text: str = Body(...),
     is_correct: bool = Body(...),
 ):
     user = get_user(username)
@@ -213,38 +218,41 @@ def save_quiz_result(
 
     user_id = ObjectId(user["_id"])
 
-    # Actualizar registro del juego
-    game = games_col.find_one({"user_id": user_id, "game_number": game_number})
-    if not game:
-        games_col.insert_one({
-            "user_id": user_id,
-            "game_number": game_number,
-            "question_number": question_number,
-            "correct_count": 1 if is_correct else 0,
-            "created_at": datetime.utcnow()
-        })
-    else:
-        # Si ya existe, incrementar si fue correcta
-        update_data = {
-            "question_number": question_number
-        }
-        if is_correct:
-            update_data["$inc"] = {"correct_count": 1}
-        else:
-            update_data["$inc"] = {"correct_count": 0}
+    quiz_col.insert_one({
+        "user_id": user_id,
+        "username": username,
+        "game_number": game_number,
+        "question_number": question_number,
+        "quiz_question": quiz_question,
+        "quiz_options": quiz_options,
+        "selected_option": selected_option,
+        "correct_answer_letter": correct_answer_letter,
+        "correct_answer_text": correct_answer_text,
+        "is_correct": is_correct,
+        "created_at": datetime.utcnow()
+    })
 
-        games_col.update_one(
-            {"user_id": user_id, "game_number": game_number},
-            {"$set": {"question_number": question_number}, "$inc": {"correct_count": 1 if is_correct else 0}}
-        )
+    games_col.update_one(
+        {"user_id": user_id, "game_number": game_number},
+        {
+            "$set": {"question_number": question_number},
+            "$inc": {"correct_count": 1 if is_correct else 0}
+        },
+        upsert=True
+    )
 
-    # Actualizar total_correct del usuario
     users_col.update_one(
-        {"_id": user["_id"]},
+        {"_id": user_id},
         {"$inc": {"stats.total_correct": 1 if is_correct else 0}}
     )
 
-    return {"message": "Quiz result saved successfully", "is_correct": is_correct}
+    return {
+        "message": "Quiz result saved",
+        "is_correct": is_correct,
+        "correct_answer_letter": correct_answer_letter,
+        "correct_answer_text": correct_answer_text
+    }
+
 
 # Función auxiliar para serializar cualquier ObjectId → str
 def serialize_doc(doc):
@@ -380,64 +388,6 @@ def delete_all_messages(username: str):
 
     return {"message": f"All conversations deleted for {username}"}
 
-@router.post("/save_quiz_result")
-def save_quiz_result(
-    username: str = Body(...),
-    game_number: int = Body(...),
-    question_number: int = Body(...),
-    quiz_question: str = Body(...),
-    quiz_options: list = Body(...),
-    selected_option: str = Body(...),
-    correct_answer: str = Body(...),
-    is_correct: bool = Body(...),
-):
-    user = get_user(username)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    user_id = ObjectId(user["_id"])
-
-    # --------------------------
-    # 🔹 Guardar el quiz en la colección quiz_results
-    # --------------------------
-    quiz_doc = {
-        "user_id": user_id,
-        "username": username,
-        "game_number": game_number,
-        "question_number": question_number,
-        "quiz_question": quiz_question,
-        "quiz_options": quiz_options,
-        "selected_option": selected_option,
-        "correct_answer": correct_answer,
-        "is_correct": is_correct,
-        "created_at": datetime.utcnow()
-    }
-
-    quiz_col.insert_one(quiz_doc)
-
-    # --------------------------
-    # 🔹 Actualizar conteo de correctas
-    # --------------------------
-    games_col.update_one(
-        {"user_id": user_id, "game_number": game_number},
-        {
-            "$set": {"question_number": question_number},
-            "$inc": {"correct_count": 1 if is_correct else 0}
-        },
-        upsert=True
-    )
-
-    users_col.update_one(
-        {"_id": user_id},
-        {"$inc": {"stats.total_correct": 1 if is_correct else 0}}
-    )
-
-    return {
-    "question": question,
-    "options": options,
-    "correct_answer_letter": correct_letter,
-    "correct_answer_text": correct_text
-}
 
 
 
