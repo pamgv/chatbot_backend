@@ -77,20 +77,44 @@ def serialize_doc(doc):
 # ---------------------------
 @router.post("/register")
 def register_user(data: Register):
-    if get_user(data.username):
+    username = data.username.strip().lower()
+
+    # ---- ❌ Validate forbidden patterns ----
+    forbidden_patterns = [
+        "@",         # no emails
+        ".com",
+        ".net",
+        ".org",
+        ".edu",
+        "nmsu",      # block institutional or local IDs
+        " ",         # no full names
+    ]
+
+    if any(p in username for p in forbidden_patterns):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Invalid username. Do not use emails, real names, institutional information, "
+                "or any text containing 'nmsu'. Use a simple non-personal username."
+            )
+        )
+
+    # ---- ❌ Check if user already exists ----
+    if get_user(username):
         raise HTTPException(status_code=400, detail="Username already exists")
 
+    # ---- ✔ Register user safely ----
     hashed_pw = hash_password(data.password)
     users_col.insert_one({
-        "username": data.username,
+        "username": username,
         "password": hashed_pw,
         "best_score": 0,
         "current_game": 1,
         "stats": {"total_games": 0, "total_correct": 0},
         "created_at": datetime.utcnow()
     })
-    return {"message": "User registered successfully!"}
 
+    return {"message": "User registered successfully!"}
 
 # ---------------------------
 # Inicio de sesión
@@ -407,6 +431,7 @@ def quiz_history(username: str):
         "total_quizzes": len(quizzes),
         "quizzes": quizzes
     }
+
 
 
 
