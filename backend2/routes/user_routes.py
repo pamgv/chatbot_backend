@@ -433,10 +433,12 @@ def save_quiz_result(
     )
 
     return {
-        "message": "Quiz result saved successfully!",
-        "is_correct": is_correct,
-        "correct_answer": correct_answer,
-        "selected_option": selected_option
-    }
+    "question": question,
+    "options": options,
+    "correct_answer_letter": correct_letter,
+    "correct_answer_text": correct_text
+}
+
+
 
 
