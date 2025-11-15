@@ -388,6 +388,27 @@ def delete_all_messages(username: str):
 
     return {"message": f"All conversations deleted for {username}"}
 
+@router.get("/quiz_history/{username}")
+def quiz_history(username: str):
+    user = get_user(username)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_id = ObjectId(user["_id"])
+
+    quizzes = list(quiz_col.find({"user_id": user_id}).sort("created_at", 1))
+
+    # Convert ObjectId → string
+    quizzes = [serialize_doc(q) for q in quizzes]
+
+    return {
+        "username": username,
+        "total_quizzes": len(quizzes),
+        "quizzes": quizzes
+    }
+
+
+
 
 
 
