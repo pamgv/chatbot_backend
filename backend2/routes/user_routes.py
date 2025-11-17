@@ -140,13 +140,25 @@ async def save_message(data: Message):
     try:
         response = client.chat.completions.create(
             model="gpt-5-mini",
+            temperature=0.2,  # Más preciso y menos verbose
+            max_tokens=120,   # Limita el tamaño de la respuesta
+            presence_penalty=0.0,
+            frequency_penalty=0.2,
             messages=[
-                {"role": "system", "content": "You are a helpful tutor chatbot for Meat Science."},
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a Meat Science tutor. "
+                        "Always respond concisely, in clear and simple language. "
+                        "Avoid long explanations. Focus only on the essential information. "
+                        "Limit responses to 2–4 short sentences maximum."
+                    )
+                },
                 {"role": "user", "content": data.text}
             ]
         )
 
-        bot_reply = response.choices[0].message.content
+        bot_reply = response.choices[0].message.content.strip()
 
         messages_col.insert_one({
             "user_id": ObjectId(user["_id"]),
@@ -167,6 +179,7 @@ async def save_message(data: Message):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI or DB error: {str(e)}")
+
 
 # ---------------------------
 # Actualizar progreso del juego (versión final con total_games correcto)
@@ -431,6 +444,7 @@ def quiz_history(username: str):
         "total_quizzes": len(quizzes),
         "quizzes": quizzes
     }
+
 
 
 
