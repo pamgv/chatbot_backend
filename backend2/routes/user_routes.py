@@ -149,7 +149,7 @@ async def save_message(data: Message):
             "role": "system",
             "content": (
                 "You are a Meat Science tutor. Keep responses concise, clear, "
-                "and no more than 3 short sentences. Avoid long explanations."
+                "and no more than 5 short sentences. Avoid long explanations."
             )
         },
         {"role": "user", "content": data.text}
@@ -443,6 +443,7 @@ def quiz_history(username: str):
         "total_quizzes": len(quizzes),
         "quizzes": quizzes
     }
+
 
 
 
