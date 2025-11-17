@@ -141,7 +141,7 @@ async def save_message(data: Message):
         response = client.chat.completions.create(
     model="gpt-4o-mini",
     temperature=0.2,
-    max_tokens=200,
+    max_tokens=600,
     frequency_penalty=0.1,
     presence_penalty=0.0,
     messages=[
@@ -443,6 +443,7 @@ def quiz_history(username: str):
         "total_quizzes": len(quizzes),
         "quizzes": quizzes
     }
+
 
 
 
