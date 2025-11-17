@@ -139,24 +139,23 @@ async def save_message(data: Message):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-5-mini",
-            temperature=0.2,  # Más preciso y menos verbose
-            max_tokens=120,   # Limita el tamaño de la respuesta
-            presence_penalty=0.0,
-            frequency_penalty=0.2,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a Meat Science tutor. "
-                        "Always respond concisely, in clear and simple language. "
-                        "Avoid long explanations. Focus only on the essential information. "
-                        "Limit responses to 2–4 short sentences maximum."
-                    )
-                },
-                {"role": "user", "content": data.text}
-            ]
-        )
+    model="gpt-4o-mini",
+    temperature=0.2,
+    max_tokens=200,
+    frequency_penalty=0.1,
+    presence_penalty=0.0,
+    messages=[
+        {
+            "role": "system",
+            "content": (
+                "You are a Meat Science tutor. Keep responses concise, clear, "
+                "and no more than 3 short sentences. Avoid long explanations."
+            )
+        },
+        {"role": "user", "content": data.text}
+    ]
+)
+
 
         bot_reply = response.choices[0].message.content.strip()
 
@@ -444,6 +443,7 @@ def quiz_history(username: str):
         "total_quizzes": len(quizzes),
         "quizzes": quizzes
     }
+
 
 
 
