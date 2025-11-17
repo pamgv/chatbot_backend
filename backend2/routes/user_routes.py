@@ -137,48 +137,82 @@ async def save_message(data: Message):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    try:
-        response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    temperature=0.2,
-    max_tokens=600,
-    frequency_penalty=0.1,
-    presence_penalty=0.0,
-    messages=[
-        {
-            "role": "system",
-            "content": (
-                "You are a Meat Science tutor. Keep responses concise, clear, "
-                "and no more than 5 short sentences. Avoid long explanations."
+    MAX_RETRIES = 3
+    attempt = 0
+    response = None
+
+    # -------------------------
+    # 🔁 RETRY AUTOMÁTICO
+    # -------------------------
+    while attempt < MAX_RETRIES:
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                temperature=0.2,              # Respuestas más concisas
+                max_tokens=600,
+                frequency_penalty=0.1,        # Evita repeticiones
+                presence_penalty=0.0,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a Meat Science tutor. "
+                            "Keep responses concise, clear, and **no longer than 5 short sentences**. "
+                            "Avoid long explanations or unnecessary details."
+                        ),
+                    },
+                    {"role": "user", "content": data.text},
+                ],
             )
-        },
-        {"role": "user", "content": data.text}
-    ]
-)
+            break  # éxito → terminar loop
 
+        except Exception as e:
+            error_str = str(e).lower()
 
-        bot_reply = response.choices[0].message.content.strip()
+            # 🔥 Si OpenAI devuelve RATE LIMIT (muy común si hay muchos usuarios)
+            if "rate" in error_str or "429" in error_str:
+                attempt += 1
+                print(f"⚠️ OpenAI rate limit, retry {attempt}/{MAX_RETRIES}")
+                time.sleep(1.2)
+                continue
 
-        messages_col.insert_one({
-            "user_id": ObjectId(user["_id"]),
-            "username": data.username,
-            "user_message": data.text,
-            "bot_response": bot_reply,
-            "game_number": data.game_number,
-            "question_number": data.question_number,
-            "created_at": datetime.utcnow()
-        })
+            # Otro error → lanzar directamente
+            raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
-        return {
-            "username": data.username,
-            "user_message": data.text,
-            "bot_response": bot_reply,
-            "status": "Message and response saved successfully"
-        }
+    # Si después de los reintentos no hay respuesta
+    if response is None:
+        raise HTTPException(
+            status_code=429,
+            detail="OpenAI is currently overloaded. Please try again."
+        )
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OpenAI or DB error: {str(e)}")
+    # -------------------------
+    # 🧠 Obtener respuesta final del bot
+    # -------------------------
+    bot_reply = response.choices[0].message.content.strip()
 
+    # -------------------------
+    # 💾 Guardar mensaje en MongoDB
+    # -------------------------
+    messages_col.insert_one({
+        "user_id": ObjectId(user["_id"]),
+        "username": data.username,
+        "user_message": data.text,
+        "bot_response": bot_reply,
+        "game_number": data.game_number,
+        "question_number": data.question_number,
+        "created_at": datetime.utcnow()
+    })
+
+    # -------------------------
+    # 📤 Respuesta al frontend
+    # -------------------------
+    return {
+        "username": data.username,
+        "user_message": data.text,
+        "bot_response": bot_reply,
+        "status": "Message and response saved successfully"
+    }
 
 # ---------------------------
 # Actualizar progreso del juego (versión final con total_games correcto)
@@ -443,6 +477,7 @@ def quiz_history(username: str):
         "total_quizzes": len(quizzes),
         "quizzes": quizzes
     }
+
 
 
 
