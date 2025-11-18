@@ -1,5 +1,6 @@
 #------- Nuevo código ----------#
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from middlewares.rate_limit import rate_limit
 from fastapi.middleware.cors import CORSMiddleware
 from routes.chatbot_routes import router as chatbot_router
@@ -45,6 +46,7 @@ async def apply_rate_limit(request, call_next):
 @app.get("/")
 def root():
     return {"message": "🚀 Chatbot backend modular running and connected to MongoDB!"}
+
 
 
 
