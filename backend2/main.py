@@ -37,16 +37,16 @@ app.include_router(user_router, prefix="/user", tags=["Users"])
 @app.middleware("http")
 async def apply_rate_limit(request, call_next):
 
-    # ⚠️ IMPORTANTE: No aplicar rate-limit a preflight CORS
+    # Nunca rate-limit OPTIONS
     if request.method == "OPTIONS":
         return await call_next(request)
 
-    # Solo aplicar rate-limit a save_message
-    if "save_message" in request.url.path:
+    # Solo aplicar a /save_message
+    if request.url.path.endswith("/save_message"):
         try:
             await rate_limit(request)
-        except Exception as e:
-            return JSONResponse(status_code=429, content={"error": str(e)})
+        except HTTPException as e:
+            return JSONResponse(status_code=429, content={"error": str(e.detail)})
 
     return await call_next(request)
 
@@ -54,6 +54,7 @@ async def apply_rate_limit(request, call_next):
 @app.get("/")
 def root():
     return {"message": "🚀 Chatbot backend modular running and connected to MongoDB!"}
+
 
 
 
