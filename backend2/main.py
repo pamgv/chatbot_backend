@@ -1,8 +1,9 @@
 #------- Nuevo código ----------#
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
-from middlewares.rate_limit import rate_limit
+#from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse   # ← ESTA ES LA LÍNEA FALTANTE
+from middlewares.rate_limit import rate_limit
 from routes.chatbot_routes import router as chatbot_router
 from routes.user_routes import router as user_router
 import openai
@@ -46,6 +47,7 @@ async def apply_rate_limit(request, call_next):
 @app.get("/")
 def root():
     return {"message": "🚀 Chatbot backend modular running and connected to MongoDB!"}
+
 
 
 
