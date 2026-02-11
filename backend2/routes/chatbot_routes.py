@@ -61,21 +61,43 @@ async def generate_quiz(data: QuizRequest):
 
     try:
         prompt = f"""
-        You are an expert Meat Science tutor.
+            You are an expert Meat Science teaching assistant for undergraduate students.
 
-        Based ONLY on the following conversation context, generate ONE multiple-choice quiz question.
+            TASK:
+            Generate ONE multiple-choice quiz question that matches this Bloom level:
+            Bloom level = ["Remember", "Understand", "Apply", "Analyze", "Evaluate"]
 
-        Output ONLY valid JSON in this exact structure:
+            Use ONLY the conversation context below to choose the topic/content of the question.
 
-        {{
-          "question": "string",
-          "options": ["string1", "string2", "string3", "string4"],
-          "correct_answer_index": 0
-        }}
+            Bloom-level guidance:
+            - Remember: recall a fact, definition, standard, temperature, term, agency, pathogen.
+            - Understand: explain why/how; interpret meaning; choose best explanation.
+            - Apply: choose the best action in a practical scenario (what should you do next?).
+            - Analyze: distinguish, compare, identify causes/errors, interpret evidence, find the best diagnosis.
+            - Evaluate: select the best justification/recommendation; weigh trade-offs; choose the best policy decision.
 
-        Conversation:
-        {data.context}
-        """
+            DIFFICULTY / OPTION QUALITY REQUIREMENTS:
+            - Exactly ONE option must be correct.
+            - The 3 incorrect options must be PLAUSIBLE to an undergrad student (good distractors).
+            - Avoid “giveaway” patterns:
+            * Do NOT make the correct option obviously longer than the others.
+            * Keep all four options similar in length and style (roughly same number of words).
+            * Avoid absolute words like "always" / "never" unless they are correct in context.
+            * Do not include "All of the above" or "None of the above".
+            - Ensure options are mutually exclusive (no two options essentially correct).
+
+            OUTPUT FORMAT:
+            Return ONLY valid JSON with exactly these keys (no extra keys, no markdown, no explanation):
+
+            {{
+            "question": "string",
+            "options": ["string1", "string2", "string3", "string4"],
+            "correct_answer_index": 0
+            }}
+
+            Conversation:
+            {data.context}
+            """
 
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
